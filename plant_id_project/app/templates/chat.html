@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>植物聊天室</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .chat-container {
+            max-width: 480px;
+            margin: 0 auto;
+            margin-top: 5vh;
+            padding: 1rem;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .message {
+            padding: 10px 15px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            max-width: 80%;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: #d1e7dd;
+            text-align: right;
+            margin-left: auto;
+        }
+        .gpt-message {
+            background-color: #e2e3e5;
+            text-align: left;
+            margin-right: auto;
+        }
+        #chat-box {
+            max-height: 55vh;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+        .img-fluid {
+            max-height: 200px;
+            border-radius: 10px;
+        }
+        #chat-form .form-control {
+            font-size: 0.95rem;
+        }
+        #send-btn {
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    {% include 'partials/navbar.html' %}
+
+    <div class="container">
+        <div class="chat-container">
+            <h5 class="text-center mb-3">與 AI 聊天</h5>
+            <p class="text-center mb-1"><strong>植物：</strong>{{ plant_name_zh }}</p>
+            <p class="text-center mb-1"><strong>英文：</strong>{{ plant_name_en }}</p>
+            <p class="text-center mb-3"><strong>學名：</strong>{{ plant_name }}</p>
+
+            <div class="text-center mb-3">
+                <img src="{{ image_url }}" class="img-fluid">
+            </div>
+
+            <div id="chat-box">
+                {% for message in messages %}
+                    <div class="message {% if message.role == 'user' %}user-message{% else %}gpt-message{% endif %}">
+                        {{ message.content }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <form id="chat-form" action="{{ url_for('identify.chat') }}" method="POST">
+                <div class="input-group">
+                    <input id="user-input" type="text" name="user_input" class="form-control" placeholder="輸入您的問題..." required>
+                    <button id="send-btn" class="btn btn-primary" type="submit">送出</button>
+                </div>
+            </form>
+            <div class="d-flex justify-content-center gap-2 mt-3 flex-wrap">
+                <a href="{{ url_for('identify.end_chat') }}" class="btn btn-danger btn-sm">
+                    ✅ 完成對話並儲存整理摘要
+                </a>
+                <a href="{{ url_for('identify.reset_chat') }}" class="btn btn-outline-secondary btn-sm"
+                    onclick="return confirm('確定要返回嗎？目前的對話將會被清除，且不會儲存成重點喔！');">
+                    🔙 返回查詢頁面
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 自動捲動到底部
+        const chatBox = document.getElementById('chat-box');
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // 顯示「思考中...」提示（短暫效果）
+        const sendBtn = document.getElementById('send-btn');
+        const form = document.getElementById('chat-form');
+        const input = document.getElementById('user-input');
+
+        form.addEventListener('submit', function () {
+            sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>思考中...';
+        });
+    </script>
+</body>
+</html>

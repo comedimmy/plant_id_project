@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">  <!-- ✅ 手機裝置支援 -->
+    <title>植物辨識</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .upload-container {
+            max-width: 400px;
+            margin: 0 auto;
+            margin-top: 10vh;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #preview-container {
+            display: none;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        #preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            border: 1px solid #ccc;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            font-size: 1rem;
+        }
+
+        .alert {
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    {% include 'partials/navbar.html' %}
+
+    <div class="upload-container">
+        <h2>上傳或拍攝植物照片</h2>
+
+        {% if usage_count >= 10 %}
+        <p class="text-center text-danger small fw-bold">
+            次數已用盡，請明天再來 
+        </p>
+        {% else %}
+        <p class="text-center text-muted small">
+            今日剩餘辨識次數：<strong>{{ 10 - usage_count }}</strong> / 10
+        </p>
+        {% endif %}
+        <!-- 顯示錯誤訊息 -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- 上傳表單 -->
+        <form method="POST" enctype="multipart/form-data">
+            <input id="image-input" type="file" name="image" accept="image/*" class="form-control mb-3" required>
+            <div id="preview-container">
+                <p class="text-muted">圖片預覽：</p>
+                <img id="preview-image" src="#" alt="預覽圖片">
+            </div>
+            <button type="submit" class="btn btn-success w-100 mt-3">辨識植物</button>
+        </form>
+
+    </div>
+    {% if recent_history %}
+    <div class="upload-container mt-3 pt-3 border-top">
+        <h6 class="text-center mb-3">最近辨識紀錄</h6>
+        <ul class="list-group list-group-flush">
+            {% for item in recent_history %}
+            <li class="list-group-item px-2 py-2 small">
+                <strong>{{ item.plant_name_zh }}</strong><br>
+                <span class="text-muted">{{ item.timestamp }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="d-grid mt-3">
+            <a href="{{ url_for('identify.history') }}" class="btn btn-outline-primary btn-sm">
+                查看詳細歷史紀錄
+            </a>
+        </div>
+    </div>
+    {% endif %}
+    <script>
+        const imageInput = document.getElementById('image-input');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('preview-image');
+
+        imageInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
