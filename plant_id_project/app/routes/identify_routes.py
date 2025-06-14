@@ -66,7 +66,7 @@ def chat():
         # 新增訊息至 session chat_history
         chat_history = session.get('chat_history', [])
         chat_history.append({"role": "user", "content": user_input})
-        messages = [{"role": "system", "content": f"你是一位植物專家，請針對植物「{plant_name_zh}（{plant_name}）」回答問題。"}]
+        messages = [{"role": "system", "content": f"你是一位植物專家，請針對植物「{plant_name_zh}（{plant_name}）」回答問題，用繁體中文純文字回答，不要用markdown格式。"}]
         messages.extend(chat_history)
 
         gpt_reply = ask_gpt_with_context(messages)
@@ -213,10 +213,10 @@ def end_chat():
         return redirect(url_for('identify.upload_image'))
 
     try:
-        if len(chat_history) > 2:
+        if len(chat_history) > 1:
             summary_prompt = [
-                {"role": "system", "content": "你是一位植物專家，請彙整以下使用者與你的對話重點。"},
-                {"role": "user", "content": f"以下是使用者與你的聊天記錄，請簡潔整理出這些關於植物「{plant_name_zh}（{plant_name}）」的問答重點。如果沒有具體問題，也請你主動補充這植物的常見知識。\n\n{chat_history}"}
+                {"role": "system", "content": "你是一位植物專家，請彙整以下使用者與你的對話重點，用繁體中文純文字回答，不要用markdown格式。"},
+                {"role": "user", "content": f"以下是使用者與你的聊天記錄，請簡潔整理出這些關於植物「{plant_name_zh}（{plant_name}）」的問答重點。如果沒有具體問題，也請你主動補充這植物的常見知識，用繁體中文純文字回答，不要用markdown格式。\n\n{chat_history}"}
             ]
             summary = ask_gpt_4(summary_prompt)
 
@@ -232,7 +232,7 @@ def end_chat():
 
             flash("✅ 對話紀錄已整理並儲存", "success")
         else:
-            flash("尚未有足夠對話內容，無需彙整", "info")
+            flash("尚未聊天，無需彙整", "info")
 
     except Exception as e:
         print("❌ 儲存對話摘要失敗：", e)
@@ -266,3 +266,28 @@ def history():
     history_list = cursor.fetchall()
 
     return render_template('history.html', history_list=history_list)
+
+@identify_bp.route('/delete_history', methods=['POST'])
+def delete_history():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("請先登入", "warning")
+        return redirect(url_for('auth.login'))
+
+    timestamp = request.form['timestamp']
+    plant_name = request.form['plant_name_zh']
+
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("""
+            DELETE FROM history
+            WHERE users = %s AND flower_name = %s AND add_time = %s
+        """, (user_id, plant_name, timestamp))
+        db.commit()
+        flash("✅ 成功刪除紀錄", "success")
+    except Exception as e:
+        print("❌ 刪除失敗：", e)
+        flash("❌ 刪除失敗，請稍後再試", "danger")
+
+    return redirect(url_for('identify.history'))
